@@ -33,7 +33,7 @@ elif sys.argv[1] == "sheet":
 
     gs = Sheets()
     sheetId = int(sys.argv[3])
-    sheetName = gs.getSheetName(os.getenv("GOOGLE_SPREADHEET_ID"), sheetId)
+    sheetName = gs.getSheetName(os.getenv("SPREADHEET_ID"), sheetId)
     if sheetName == None:
         sys.exit("Could not find sheet")
 
@@ -41,15 +41,28 @@ elif sys.argv[1] == "sheet":
 
     gs.enterResult(
         result,
-        spreadsheetId=os.getenv("GOOGLE_SPREADHEET_ID"),
+        spreadsheetId=os.getenv("SPREADHEET_ID"),
         sheetId=sheetId,
-        allCell=os.getenv("GOOGLE_SHEET_ALL_CELL"),
-        dpsCell=os.getenv("GOOGLE_SHEET_DPS_CELL"),
-        healCell=os.getenv("GOOGLE_SHEET_HEAL_CELL"),
-        tankCell=os.getenv("GOOGLE_SHEET_TANK_CELL"),
+        allCell=os.getenv("SHEET_CELL_ALL"),
+        dpsCell=os.getenv("SHEET_CELL_DPS"),
+        healCell=os.getenv("SHEET_CELL_HEAL"),
+        tankCell=os.getenv("SHEET_CELL_TANK"),
+        supportCell=os.getenv("SHEET_CELL_SUPPORT"),
+        cuts={
+            "sp": os.getenv("SHEET_CUT_SP"),
+            "ff": os.getenv("SHEET_CUT_FF"),
+            "cor": os.getenv("SHEET_CUT_COR"),
+            "coe": os.getenv("SHEET_CUT_COE"),
+            "enh": os.getenv("SHEET_CUT_ENH"),
+            "ele": os.getenv("SHEET_CUT_ELE"),
+            "ret": os.getenv("SHEET_CUT_RET"),
+            "hpal": os.getenv("SHEET_CUT_HPAL"),
+        },
         includeHealingDone=getenv_bool("INCLUDE_HEALING_DONE"),
         includeDamageDone=getenv_bool("INCLUDE_DAMAGE_DONE")
     )
+
+    print("Success")
 
 else:
     print("Unknown command: "+sys.argv[1])

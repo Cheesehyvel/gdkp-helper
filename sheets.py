@@ -15,7 +15,7 @@ class Sheets:
     def copyAndEnter(self, result, spreadsheetId, sheetId):
         print("copy and enter")
 
-    def enterResult(self, result, spreadsheetId, sheetId, allCell="", dpsCell="", healCell="", tankCell="", includeHealingDone=False, includeDamageDone=False):
+    def enterResult(self, result, spreadsheetId, sheetId, allCell="", dpsCell="", healCell="", tankCell="", supportCell="", cuts=None, includeHealingDone=False, includeDamageDone=False):
         data = []
 
         sheetName = self.getSheetName(spreadsheetId, sheetId)
@@ -73,15 +73,27 @@ class Sheets:
                 d["values"].append([player["name"]])
             data.append(d);
 
+        if len(supportCell) > 0 and cuts and len(result["players"]["support"]) > 0:
+            endCell = self.incrementRow(supportCell, len(result["players"]["support"])-1)
+            endCell = self.incrementColumn(endCell, 2);
+            d = {
+                "range": "'"+sheetName+"'!"+supportCell+":"+endCell,
+                "values": []
+            }
+            for player in result["players"]["support"]:
+                if cuts[player["type"]]:
+                    d["values"].append([player["title"], player["name"], str(cuts[player["type"]]).replace(".", ",")+"%"])
+            data.append(d)
+
         response = self.service.spreadsheets().values().batchUpdate(
             spreadsheetId=spreadsheetId,
             body={
-                "valueInputOption": "RAW",
+                "valueInputOption": "USER_ENTERED",
                 "data": data
             }
         ).execute()
 
-        pprint(response)
+        return response
 
     def copySheet(self, spreadsheetId, sheetId):
         request = self.service.spreadsheets().sheets().copyTo(
