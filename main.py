@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import pprint
 from dotenv import load_dotenv
 from wcl import WCL
@@ -12,37 +13,47 @@ def getenv_bool(name: str, default: bool = False) -> bool:
 
 wcl = WCL(os.getenv("WCL_ACCESS_TOKEN"))
 
-if len(sys.argv) < 3:
-    print("Missing arguments")
-    print("Usage: python3 main.py <command> <warcraft log id>")
-    print("Available commands:")
-    print("  fetch: Fetch log and print a copy-pastable list")
-    print("  sheet: Fetch log and paste into google sheet")
+parser = argparse.ArgumentParser()
+parser.add_argument("command", help="Command to run (fetch/sheet)")
+parser.add_argument("code", help="Warcraft logs id")
+parser.add_argument("--sheet", help="Google sheet id", type=int)
+parser.add_argument("--endTime", help="Set endtime for log", type=float, default=9999999999)
+parser.add_argument("--tanks", help="Set number of tanks", type=int, default=3)
+args = parser.parse_args()
 
-if sys.argv[1] == "fetch":
-    result = wcl.fetch(sys.argv[2])
+if args.command == "fetch":
+
+    result = wcl.fetch(
+        logCode=args.code,
+        endTime=args.endTime,
+        tanks=args.tanks
+    )
+
     wcl.printResult(
         result,
         includeHealingDone=getenv_bool("INCLUDE_HEALING_DONE"),
         includeDamageDone=getenv_bool("INCLUDE_DAMAGE_DONE")
     )
 
-elif sys.argv[1] == "sheet":
-    if len(sys.argv) < 4:
+elif args.command == "sheet":
+    if args.sheet == None:
         sys.exit("Missing sheet id")
 
     gs = Sheets()
-    sheetId = int(sys.argv[3])
-    sheetName = gs.getSheetName(os.getenv("SPREADHEET_ID"), sheetId)
+    sheetName = gs.getSheetName(os.getenv("SPREADHEET_ID"), args.sheet)
     if sheetName == None:
         sys.exit("Could not find sheet")
 
-    result = wcl.fetch(sys.argv[2])
+    result = wcl.fetch(
+        logCode=args.code,
+        endTime=args.endTime,
+        tanks=args.tanks
+    )
 
     gs.enterResult(
         result,
         spreadsheetId=os.getenv("SPREADHEET_ID"),
-        sheetId=sheetId,
+        sheetId=args.sheet,
         allCell=os.getenv("SHEET_CELL_ALL"),
         dpsCell=os.getenv("SHEET_CELL_DPS"),
         healCell=os.getenv("SHEET_CELL_HEAL"),
@@ -57,6 +68,8 @@ elif sys.argv[1] == "sheet":
             "ele": os.getenv("SHEET_CUT_ELE"),
             "ret": os.getenv("SHEET_CUT_RET"),
             "hpal": os.getenv("SHEET_CUT_HPAL"),
+            "mtank": os.getenv("SHEET_CUT_MTANK"),
+            "wtank": os.getenv("SHEET_CUT_WTANK"),
         },
         includeHealingDone=getenv_bool("INCLUDE_HEALING_DONE"),
         includeDamageDone=getenv_bool("INCLUDE_DAMAGE_DONE")
@@ -65,4 +78,4 @@ elif sys.argv[1] == "sheet":
     print("Success")
 
 else:
-    print("Unknown command: "+sys.argv[1])
+    print("Unknown command: "+args.command)

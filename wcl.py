@@ -7,23 +7,28 @@ class WCL:
         transport = AIOHTTPTransport(url='https://classic.warcraftlogs.com/api/v2/client', headers={'Authorization': 'Bearer '+token}, timeout=120)
         self.client = Client(transport=transport, fetch_schema_from_transport=True)
 
-    def fetch(self, logCode):
-        nTanks = 3
+    def fetch(self, logCode, endTime = 9999999999, tanks = 3):
         healCutOff = 0.02 # Minimum healing to be counted as a healer
 
         query = gql("""
-            query ($logCode: String!) {
+            query ($logCode: String!, $endTime: Float!) {
                 reportData {
                     report(code: $logCode) {
+                        zone {
+                            id
+                        }
                         rankedCharacters {
                             name
                         }
-                        dps: table(dataType: DamageDone, startTime: 0, endTime: 9999999999, hostilityType: Friendlies)
-                        healers: table(dataType: Healing, startTime: 0, endTime: 9999999999, hostilityType: Friendlies)
-                        tanks: table(dataType: DamageTaken, startTime: 0, endTime: 9999999999, hostilityType: Friendlies)
-                        ff: table(dataType: Casts, abilityID: 26993, startTime: 0, endTime: 9999999999, hostilityType: Friendlies)
-                        coe: table(dataType: Casts, abilityID: 27228, startTime: 0, endTime: 9999999999, hostilityType: Friendlies)
-                        cor: table(dataType: Casts, abilityID: 27226, startTime: 0, endTime: 9999999999, hostilityType: Friendlies)
+                        dps: table(dataType: DamageDone, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        healers: table(dataType: Healing, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        tanks: table(dataType: DamageTaken, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        ff: table(dataType: Casts, abilityID: 26993, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        coe: table(dataType: Casts, abilityID: 27228, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        cor: table(dataType: Casts, abilityID: 27226, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        mtankIllidari: table(dataType: DamageTaken, encounterID: 608, abilityID: 41483, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        wtankLeo: table(dataType: DamageTaken, encounterID: 625, abilityID: 37675, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        #wtankKT: table(dataType: DamageTaken, encounterID: 733, abilityID: 36971, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
                     }
                 }
             }
@@ -31,6 +36,7 @@ class WCL:
 
         result = self.client.execute(query, {
             "logCode": logCode,
+            "endTime": endTime
         })
 
         data = {
@@ -66,8 +72,9 @@ class WCL:
                 })
                 data["healing"]+= player["total"]
 
+        tankTypes = ["Warrior", "Paladin", "Druid"]
         for player in result["reportData"]["report"]["tanks"]["data"]["entries"]:
-            if player["name"] in data["players"]["all"]:
+            if player["name"] in data["players"]["all"] and player["type"] in tankTypes:
                 data["players"]["tanks"].append({
                     "name": player["name"],
                     "total": player["total"],
@@ -75,31 +82,67 @@ class WCL:
                 })
 
         # Faerie fire
-        name = self.mostCasts(result["reportData"]["report"]["ff"]["data"]["entries"])
-        if name:
+        player = self.highestEntry(result["reportData"]["report"]["ff"]["data"]["entries"])
+        if player:
             data["players"]["support"].append({
-                "name": name,
+                "name": player["name"],
                 "type": "ff",
                 "title": "Faerie Fire",
             })
 
         # CoE
-        name = self.mostCasts(result["reportData"]["report"]["coe"]["data"]["entries"])
-        if name:
+        player = self.highestEntry(result["reportData"]["report"]["coe"]["data"]["entries"])
+        if player:
             data["players"]["support"].append({
-                "name": name,
+                "name": player["name"],
                 "type": "coe",
                 "title": "Curse of Elements",
             })
 
         # CoR
-        name = self.mostCasts(result["reportData"]["report"]["cor"]["data"]["entries"])
-        if name:
+        player = self.highestEntry(result["reportData"]["report"]["cor"]["data"]["entries"])
+        if player:
             data["players"]["support"].append({
-                "name": name,
+                "name": player["name"],
                 "type": "cor",
                 "title": "Curse of Recklessness",
             })
+
+        # Mage tank on Illidari Council
+        player = self.highestEntry(result["reportData"]["report"]["mtankIllidari"]["data"]["entries"])
+        if player:
+            data["players"]["support"].append({
+                "name": player["name"],
+                "type": "mtank",
+                "title": "Mage tank"
+            })
+
+        # Warlock tank on Leotheras
+        player = self.highestEntry(result["reportData"]["report"]["wtankLeo"]["data"]["entries"])
+        if player and player["type"] == "Warlock":
+            data["players"]["support"].append({
+                "name": player["name"],
+                "type": "wtank",
+                "title": "Warlock tank"
+            })
+
+        # Warlock tank on Kael'Thas
+        """
+        player = self.highestEntry(result["reportData"]["report"]["wtankKT"]["data"]["entries"])
+        if player and player["type"] == "Warlock":
+            already_tanked = False
+            for p in data["players"]["support"]:
+                if p["type"] == "wtank" and p["name"] == player["name"]:
+                    already_tanked = True
+                    break
+            if already_tanked == False:
+                data["players"]["support"].append({
+                    "name": player["name"],
+                    "type": "wtank",
+                    "title": "Warlock tank"
+                })
+                */
+        """
 
         # Sorting
         data["players"]["dps"].sort(key=lambda x: x.get("total"), reverse=True)
@@ -107,7 +150,7 @@ class WCL:
         data["players"]["tanks"].sort(key=lambda x: x.get("total"), reverse=True)
 
         # Most damage taken = Tanks
-        data["players"]["tanks"] = data["players"]["tanks"][:nTanks]
+        data["players"]["tanks"] = data["players"]["tanks"][:tanks]
 
         # Healers
         num = 0
@@ -164,16 +207,12 @@ class WCL:
 
         return data
 
-    def mostCasts(self, players):
-        name = ""
-        n = 0
-        for player in players:
-            if player["total"] > n:
-                name = player["name"]
-                n = player["total"]
-        if n:
-            return name
-        return None
+    def highestEntry(self, entries, key="total"):
+        re = None
+        for entry in entries:
+            if re == None or entry[key] > re[key]:
+                re = entry
+        return re
 
     def printResult(self, data, includeHealingDone=True, includeDamageDone=True):
         print("Healers")

@@ -13,7 +13,7 @@ Copy .env.example to .env and fill in the details
 A Warcraft logs access token can be generated with an API tool like Insomnia.
 
 If you want to use the sheet command you must get some credentials from Google.\
-Follow this guide to create credentials: https://developers.google.com/workspace/guides/create-credentials#oauth-client-id \
+Follow this guide to create credentials (Desktop App): https://developers.google.com/workspace/guides/create-credentials#oauth-client-id \
 Download and save them as `google/credentials.json`.\
 Then go into the google directory and run oauth.py.
 ```
@@ -33,7 +33,7 @@ To fetch log and paste into google sheet
 $ python3 main.py sheet <warcraft logs id> <sheet id>
 ```
 
-The warcraft logs id can be found in the url of the report `/reports/<log id>#blablabla`.\
+The warcraft logs id can be found in the url of the report `/reports/<log id>#blablabla`.
 
 The spreadsheet id and sheet id can be found at the end the document url `/spreadsheets/d/<spreadsheet id>/edit#gid=<sheet id>`.\
 The spreadsheet id is for the whole document, while the sheet id is for the tab within the document.
