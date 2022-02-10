@@ -27,8 +27,8 @@ class WCL:
                         coe: table(dataType: Casts, abilityID: 27228, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
                         cor: table(dataType: Casts, abilityID: 27226, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
                         mtankIllidari: table(dataType: DamageTaken, encounterID: 608, abilityID: 41483, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        wtankLeo: table(dataType: DamageTaken, encounterID: 625, abilityID: 37675, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        #wtankKT: table(dataType: DamageTaken, encounterID: 733, abilityID: 36971, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        ltankLeo: table(dataType: DamageTaken, encounterID: 625, abilityID: 37675, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
+                        #ltankKT: table(dataType: DamageTaken, encounterID: 733, abilityID: 36971, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
                     }
                 }
             }
@@ -87,7 +87,7 @@ class WCL:
             data["players"]["support"].append({
                 "name": player["name"],
                 "type": "ff",
-                "title": "Faerie Fire",
+                "title": "FF",
             })
 
         # CoE
@@ -96,7 +96,7 @@ class WCL:
             data["players"]["support"].append({
                 "name": player["name"],
                 "type": "coe",
-                "title": "Curse of Elements",
+                "title": "CoE",
             })
 
         # CoR
@@ -105,7 +105,7 @@ class WCL:
             data["players"]["support"].append({
                 "name": player["name"],
                 "type": "cor",
-                "title": "Curse of Recklessness",
+                "title": "CoR",
             })
 
         # Mage tank on Illidari Council
@@ -114,32 +114,32 @@ class WCL:
             data["players"]["support"].append({
                 "name": player["name"],
                 "type": "mtank",
-                "title": "Mage tank"
+                "title": "M tank"
             })
 
         # Warlock tank on Leotheras
-        player = self.highestEntry(result["reportData"]["report"]["wtankLeo"]["data"]["entries"])
+        player = self.highestEntry(result["reportData"]["report"]["ltankLeo"]["data"]["entries"])
         if player and player["type"] == "Warlock":
             data["players"]["support"].append({
                 "name": player["name"],
-                "type": "wtank",
-                "title": "Warlock tank"
+                "type": "ltank",
+                "title": "Ltank"
             })
 
         # Warlock tank on Kael'Thas
         """
-        player = self.highestEntry(result["reportData"]["report"]["wtankKT"]["data"]["entries"])
+        player = self.highestEntry(result["reportData"]["report"]["ltankKT"]["data"]["entries"])
         if player and player["type"] == "Warlock":
             already_tanked = False
             for p in data["players"]["support"]:
-                if p["type"] == "wtank" and p["name"] == player["name"]:
+                if p["type"] == "ltank" and p["name"] == player["name"]:
                     already_tanked = True
                     break
             if already_tanked == False:
                 data["players"]["support"].append({
                     "name": player["name"],
-                    "type": "wtank",
-                    "title": "Warlock tank"
+                    "type": "ltank",
+                    "title": "Ltank"
                 })
                 */
         """
@@ -177,32 +177,32 @@ class WCL:
                 data["players"]["support"].append({
                     "name": player["name"],
                     "type": "sp",
-                    "title": "Shadow priest",
+                    "title": "SP",
                 })
             if player["icon"] == "Shaman-Enhancement":
                 data["players"]["support"].append({
                     "name": player["name"],
                     "type": "enh",
-                    "title": "Enhancement",
+                    "title": "Enh",
                 })
             if player["icon"] == "Shaman-Elemental":
                 data["players"]["support"].append({
                     "name": player["name"],
                     "type": "ele",
-                    "title": "Elemental",
+                    "title": "Ele",
                 })
             if player["icon"] == "Paladin-Retribution":
                 data["players"]["support"].append({
                     "name": player["name"],
                     "type": "ret",
-                    "title": "Ret paladin",
+                    "title": "Ret",
                 })
         for player in data["players"]["healers"]:
             if player["icon"] == "Paladin-Holy":
                 data["players"]["support"].append({
                     "name": player["name"],
                     "type": "hpal",
-                    "title": "Holy paladin",
+                    "title": "Hpal",
                 })
 
         return data
@@ -214,13 +214,10 @@ class WCL:
                 re = entry
         return re
 
-    def printResult(self, data, includeHealingDone=True, includeDamageDone=True):
+    def printResult(self, data):
         print("Healers")
         for player in data["players"]["healers"]:
-            if includeHealingDone:
-                print(player["name"]+"\t"+str(player["total"]))
-            else:
-                print(player["name"])
+            print(player["name"]+"\t"+str(player["total"]))
         print(" ")
 
         print("Tanks")
@@ -230,10 +227,7 @@ class WCL:
 
         print("DPS")
         for player in data["players"]["dps"]:
-            if includeDamageDone:
-                print(player["name"]+"\t"+str(player["total"]))
-            else:
-                print(player["name"])
+            print(player["name"]+"\t"+str(player["total"]))
         print(" ")
 
         print("Support")

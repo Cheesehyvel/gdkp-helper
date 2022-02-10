@@ -15,14 +15,16 @@ class Sheets:
     def copyAndEnter(self, result, spreadsheetId, sheetId):
         print("copy and enter")
 
-    def enterResult(self, result, spreadsheetId, sheetId, allCell="", dpsCell="", healCell="", tankCell="", supportCell="", cuts=None, includeHealingDone=False, includeDamageDone=False):
+    def enterResult(self, result, spreadsheetId, sheetId, config):
         data = []
 
         sheetName = self.getSheetName(spreadsheetId, sheetId)
 
-        if len(allCell) > 0 and len(result["players"]["all"]) > 0:
+        if self.hasCell(config, "all_names") and len(result["players"]["all"]) > 0:
+            startCell = config["cells"]["all_names"]
+            endCell = self.incrementRow(startCell, len(result["players"]["all"])-1)
             d = {
-                "range": "'"+sheetName+"'!"+allCell+":"+self.incrementRow(allCell, len(result["players"]["all"])-1),
+                "range": "'"+sheetName+"'!"+startCell+":"+endCell,
                 "values": []
             }
             for player in result["players"]["dps"]:
@@ -33,57 +35,94 @@ class Sheets:
                 d["values"].append([player["name"]])
             data.append(d);
 
-        if len(dpsCell) > 0 and len(result["players"]["dps"]) > 0:
-            endCell = self.incrementRow(dpsCell, len(result["players"]["dps"])-1)
-            if includeDamageDone:
-                endCell = self.incrementColumn(endCell)
+        if self.hasCell(config, "dps_names") and len(result["players"]["dps"]) > 0:
+            startCell = config["cells"]["dps_names"]
+            endCell = self.incrementRow(startCell, len(result["players"]["dps"])-1)
             d = {
-                "range": "'"+sheetName+"'!"+dpsCell+":"+endCell,
+                "range": "'"+sheetName+"'!"+startCell+":"+endCell,
                 "values": []
             }
             for player in result["players"]["dps"]:
-                if includeDamageDone:
-                    d["values"].append([player["name"], player["total"]])
-                else:
-                    d["values"].append([player["name"]])
+                d["values"].append([player["name"]])
             data.append(d);
 
-        if len(healCell) > 0 and len(result["players"]["healers"]) > 0:
-            endCell = self.incrementRow(healCell, len(result["players"]["healers"])-1)
-            if includeHealingDone:
-                endCell = self.incrementColumn(endCell)
+        if self.hasCell(config, "dps_amounts") and len(result["players"]["dps"]) > 0:
+            startCell = config["cells"]["dps_amounts"]
+            endCell = self.incrementRow(startCell, len(result["players"]["dps"])-1)
             d = {
-                "range": "'"+sheetName+"'!"+healCell+":"+endCell,
+                "range": "'"+sheetName+"'!"+startCell+":"+endCell,
+                "values": []
+            }
+            for player in result["players"]["dps"]:
+                d["values"].append([player["total"]])
+            data.append(d);
+
+        if self.hasCell(config, "healer_names") and len(result["players"]["healers"]) > 0:
+            startCell = config["cells"]["healer_names"]
+            endCell = self.incrementRow(startCell, len(result["players"]["healers"])-1)
+            d = {
+                "range": "'"+sheetName+"'!"+startCell+":"+endCell,
                 "values": []
             }
             for player in result["players"]["healers"]:
-                if includeHealingDone:
-                    d["values"].append([player["name"], player["total"]])
-                else:
-                    d["values"].append([player["name"]])
+                d["values"].append([player["name"]])
             data.append(d);
 
-        if len(tankCell) > 0 and len(result["players"]["tanks"]) > 0:
-            endCell = self.incrementRow(tankCell, len(result["players"]["tanks"])-1)
+        if self.hasCell(config, "healer_amounts") and len(result["players"]["healers"]) > 0:
+            startCell = config["cells"]["healer_amounts"]
+            endCell = self.incrementRow(startCell, len(result["players"]["healers"])-1)
             d = {
-                "range": "'"+sheetName+"'!"+tankCell+":"+endCell,
+                "range": "'"+sheetName+"'!"+startCell+":"+endCell,
+                "values": []
+            }
+            for player in result["players"]["healers"]:
+                d["values"].append([player["total"]])
+            data.append(d);
+
+        if self.hasCell(config, "tank_names") and len(result["players"]["tanks"]) > 0:
+            startCell = config["cells"]["tank_names"]
+            endCell = self.incrementRow(startCell, len(result["players"]["tanks"])-1)
+            d = {
+                "range": "'"+sheetName+"'!"+startCell+":"+endCell,
                 "values": []
             }
             for player in result["players"]["tanks"]:
                 d["values"].append([player["name"]])
             data.append(d);
 
-        if len(supportCell) > 0 and cuts and len(result["players"]["support"]) > 0:
-            endCell = self.incrementRow(supportCell, len(result["players"]["support"])-1)
-            endCell = self.incrementColumn(endCell, 2);
+        if self.hasCell(config, "support_names") and len(result["players"]["support"]) > 0:
+            startCell = config["cells"]["support_names"]
+            endCell = self.incrementRow(startCell, len(result["players"]["support"])-1)
             d = {
-                "range": "'"+sheetName+"'!"+supportCell+":"+endCell,
+                "range": "'"+sheetName+"'!"+startCell+":"+endCell,
                 "values": []
             }
             for player in result["players"]["support"]:
-                if cuts[player["type"]]:
-                    d["values"].append([player["title"], player["name"], str(cuts[player["type"]]).replace(".", ",")+"%"])
+                d["values"].append([player["name"]])
             data.append(d)
+
+            if self.hasCell(config, "support_titles"):
+                startCell = config["cells"]["support_titles"]
+                endCell = self.incrementRow(startCell, len(result["players"]["support"])-1)
+                d = {
+                    "range": "'"+sheetName+"'!"+startCell+":"+endCell,
+                    "values": []
+                }
+                for player in result["players"]["support"]:
+                    d["values"].append([player["title"]])
+                data.append(d)
+
+            if self.hasCell(config, "support_cuts") and "cuts" in config:
+                startCell = config["cells"]["support_cuts"]
+                endCell = self.incrementRow(startCell, len(result["players"]["support"])-1)
+                d = {
+                    "range": "'"+sheetName+"'!"+startCell+":"+endCell,
+                    "values": []
+                }
+                for player in result["players"]["support"]:
+                    if player["type"] in config["cuts"]:
+                        d["values"].append([str(config["cuts"][player["type"]]).replace(".", ",")+"%"])
+                data.append(d)
 
         response = self.service.spreadsheets().values().batchUpdate(
             spreadsheetId=spreadsheetId,
@@ -130,3 +169,6 @@ class Sheets:
         index = chars.find(col)
         col = chars[index+increment]
         return col+num
+
+    def hasCell(self, config, cell):
+        return config and "cells" in config and cell in config["cells"]
