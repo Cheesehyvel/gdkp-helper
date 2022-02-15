@@ -1,0 +1,32 @@
+{
+    "performance": {
+        "cells": {
+            "dps_names": "H3",
+            "dps_amounts": "I3",
+            "healer_names": "S3",
+            "tank_names": "S13",
+            "support_names": "S21",
+            "support_titles": "R21",
+            "support_cuts": "T21"
+        },
+        "cuts": {
+            "sp": 0.5,
+            "ff": 0.5,
+            "cor": 0.25,
+            "coe": 0.25,
+            "enh": 0.75,
+            "ele": 0.25,
+            "ret": 0.5,
+            "hpal": 0.5,
+            "mtank": 0.25,
+            "ltank": 0.25
+        }
+    },
+    "even": {
+        "cells": {
+            "dps_names": "H3",
+            "healer_names": "R3",
+            "tank_names": "R13"
+        }
+    }
+}

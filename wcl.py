@@ -8,7 +8,7 @@ class WCL:
         self.client = Client(transport=transport, fetch_schema_from_transport=True)
 
     def fetch(self, logCode, endTime = 9999999999, tanks = 3):
-        healCutOff = 0.02 # Minimum healing to be counted as a healer
+        healCutOff = 0.05 # Minimum healing to be counted as a healer
 
         query = gql("""
             query ($logCode: String!, $endTime: Float!) {
