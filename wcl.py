@@ -8,7 +8,7 @@ class WCL:
         self.client = Client(transport=transport, fetch_schema_from_transport=True)
 
     def fetch(self, logCode, endTime = 9999999999, tanks = 3):
-        healCutOff = 0.05 # Minimum healing to be counted as a healer
+        healCutOff = 0.03 # Minimum healing to be counted as a healer
 
         query = gql("""
             query ($logCode: String!, $endTime: Float!) {
@@ -153,12 +153,13 @@ class WCL:
         data["players"]["tanks"] = data["players"]["tanks"][:tanks]
 
         # Healers
-        num = 0
-        for player in data["players"]["healers"]:
-            if player["total"] / data["healing"] < healCutOff:
-                break
-            num+= 1
-        data["players"]["healers"] = data["players"]["healers"][:num]
+        def filterHealers(p):
+            if p["total"] / data["healing"] < healCutOff:
+                return False
+            if p["icon"] == "Priest-Shadow":
+                return False
+            return True
+        data["players"]["healers"] = list(filter(filterHealers, data["players"]["healers"]))
 
         # DPS
         def filterDps(p):
