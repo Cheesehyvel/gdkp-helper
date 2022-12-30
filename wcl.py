@@ -23,12 +23,6 @@ class WCL:
                         dps: table(dataType: DamageDone, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
                         healers: table(dataType: Healing, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
                         tanks: table(dataType: DamageTaken, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        ff: table(dataType: Casts, abilityID: 26993, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        coe: table(dataType: Casts, abilityID: 27228, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        cor: table(dataType: Casts, abilityID: 27226, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        mtankIllidari: table(dataType: DamageTaken, encounterID: 608, abilityID: 41483, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        ltankLeo: table(dataType: DamageTaken, encounterID: 625, abilityID: 37675, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
-                        #ltankKT: table(dataType: DamageTaken, encounterID: 733, abilityID: 36971, startTime: 0, endTime: $endTime, hostilityType: Friendlies)
                     }
                 }
             }
@@ -51,8 +45,13 @@ class WCL:
             "healing": 0,
         }
 
-        for player in result["reportData"]["report"]["rankedCharacters"]:
-            data["players"]["all"].append(player["name"])
+        if "rankedCharacters" in result["reportData"]["report"] and result["reportData"]["report"]["rankedCharacters"]:
+            for player in result["reportData"]["report"]["rankedCharacters"]:
+                data["players"]["all"].append(player["name"])
+        else:
+            for player in result["reportData"]["report"]["dps"]["data"]["entries"]:
+                if "gear" in player and len(player["gear"]):
+                    data["players"]["all"].append(player["name"])
 
         for player in result["reportData"]["report"]["dps"]["data"]["entries"]:
             if player["name"] in data["players"]["all"]:
@@ -72,7 +71,7 @@ class WCL:
                 })
                 data["healing"]+= player["total"]
 
-        tankTypes = ["Warrior", "Paladin", "Druid"]
+        tankTypes = ["Warrior", "Paladin", "Druid", "DeathKnight"]
         for player in result["reportData"]["report"]["tanks"]["data"]["entries"]:
             if player["name"] in data["players"]["all"] and player["type"] in tankTypes:
                 data["players"]["tanks"].append({
@@ -80,69 +79,6 @@ class WCL:
                     "total": player["total"],
                     "icon": player["icon"]
                 })
-
-        # Faerie fire
-        player = self.highestEntry(result["reportData"]["report"]["ff"]["data"]["entries"])
-        if player:
-            data["players"]["support"].append({
-                "name": player["name"],
-                "type": "ff",
-                "title": "FF",
-            })
-
-        # CoE
-        player = self.highestEntry(result["reportData"]["report"]["coe"]["data"]["entries"])
-        if player:
-            data["players"]["support"].append({
-                "name": player["name"],
-                "type": "coe",
-                "title": "CoE",
-            })
-
-        # CoR
-        player = self.highestEntry(result["reportData"]["report"]["cor"]["data"]["entries"])
-        if player:
-            data["players"]["support"].append({
-                "name": player["name"],
-                "type": "cor",
-                "title": "CoR",
-            })
-
-        # Mage tank on Illidari Council
-        player = self.highestEntry(result["reportData"]["report"]["mtankIllidari"]["data"]["entries"])
-        if player:
-            data["players"]["support"].append({
-                "name": player["name"],
-                "type": "mtank",
-                "title": "M tank"
-            })
-
-        # Warlock tank on Leotheras
-        player = self.highestEntry(result["reportData"]["report"]["ltankLeo"]["data"]["entries"])
-        if player and player["type"] == "Warlock":
-            data["players"]["support"].append({
-                "name": player["name"],
-                "type": "ltank",
-                "title": "Ltank"
-            })
-
-        # Warlock tank on Kael'Thas
-        """
-        player = self.highestEntry(result["reportData"]["report"]["ltankKT"]["data"]["entries"])
-        if player and player["type"] == "Warlock":
-            already_tanked = False
-            for p in data["players"]["support"]:
-                if p["type"] == "ltank" and p["name"] == player["name"]:
-                    already_tanked = True
-                    break
-            if already_tanked == False:
-                data["players"]["support"].append({
-                    "name": player["name"],
-                    "type": "ltank",
-                    "title": "Ltank"
-                })
-                */
-        """
 
         # Sorting
         data["players"]["dps"].sort(key=lambda x: x.get("total"), reverse=True)
